@@ -36,7 +36,7 @@ public class ListaProdutosActivity extends AppCompatActivity {
         dao = db.getProdutoDAO();
 
         ProdutoRepository repository = new ProdutoRepository(dao);
-        repository.buscaProdutos();
+        repository.buscaProdutos(adapter::atualiza);
     }
 
     private void configuraListaProdutos() {
@@ -87,6 +87,4 @@ public class ListaProdutosActivity extends AppCompatActivity {
                 adapter.edita(posicao, produtoEditado))
                 .execute();
     }
-
-
 }

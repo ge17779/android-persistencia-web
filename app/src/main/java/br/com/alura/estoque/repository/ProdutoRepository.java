@@ -26,22 +26,15 @@ public class ProdutoRepository {
     }
 
     private void buscaProdutosInterno(ProdutosCarregadosListener listener) {
-        new BaseAsyncTask<>(dao::buscaTodos, new BaseAsyncTask.FinalizadaListener<List<Produto>>() {
-            @Override
-            public void quandoFinalizada(List<Produto> resultado) {
+        new BaseAsyncTask<>(dao::buscaTodos,
+            resultado -> {
                 listener.quandoCarregados(resultado);
-                buscaProdutosNaApi();
+                buscaProdutosNaApi(listener);
             }
-        }
-//                resultado -> {
-//                    listener.quandoCarregados(resultado);
-//                    buscaProdutosNaApi();
-//                }
-        )
-                .execute();
+        ).execute();
     }
 
-    private void buscaProdutosNaApi() {
+    private void buscaProdutosNaApi(ProdutosCarregadosListener listener) {
         ProdutoService service = new EstoqueRetrofit().getProdutoService();
         Call<List<Produto>> call = service.buscaTodos();
         new BaseAsyncTask<>(() -> {
@@ -53,9 +46,8 @@ public class ProdutoRepository {
                 e.printStackTrace();
             }
             return dao.buscaTodos();
-        }, produtosNovos -> {
-            //notifica que o dado está pronto
-        }).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        }, listener::quandoCarregados)
+                .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     public interface ProdutosCarregadosListener{
