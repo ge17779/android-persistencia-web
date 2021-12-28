@@ -1,6 +1,7 @@
 package br.com.alura.estoque.ui.activity;
 
 import android.os.Bundle;
+import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -63,7 +64,18 @@ public class ListaProdutosActivity extends AppCompatActivity {
 
     private void abreFormularioSalvaProduto() {
         new SalvaProdutoDialog(this, produtoCriado ->
-            repository.salva(produtoCriado, adapter::adiciona))
+            repository.salva(produtoCriado, new ProdutoRepository.DadosCarregadosCallback<Produto>() {
+                @Override
+                public void quandoSucesso(Produto resultado) {
+                    adapter.adiciona(resultado);
+                }
+
+                @Override
+                public void quandoFalha(String erro) {
+                    Toast.makeText(ListaProdutosActivity.this, "Não foi possível salvar o produto, "
+                            + erro, Toast.LENGTH_SHORT).show();
+                }
+            }))
                 .mostra();
     }
 

@@ -53,11 +53,11 @@ public class ProdutoRepository {
                 .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
-    public void salva(Produto produto, DadosCarregadosListener<Produto> listener) {
-        salvaNaApi(produto, listener);
+    public void salva(Produto produto, DadosCarregadosCallback<Produto> callback) {
+        salvaNaApi(produto, callback);
     }
 
-    private void salvaNaApi(Produto produto, DadosCarregadosListener<Produto> listener) {
+    private void salvaNaApi(Produto produto, DadosCarregadosCallback<Produto> callback) {
         Call<Produto> call = service.salva(produto);
         call.enqueue(new Callback<Produto>() {
             @Override
@@ -66,29 +66,39 @@ public class ProdutoRepository {
                 if (response.isSuccessful()){
                     Produto produtoSalvo = response.body();
                     if (produtoSalvo != null){
-                        salvaInterno(produtoSalvo, listener);
+                        salvaInterno(produtoSalvo, callback);
                     }
+                } else {
+                    callback.quandoFalha("Resposta não sucedida");
                 }
             }
 
             @Override
             @EverythingIsNonNull
             public void onFailure(Call<Produto> call, Throwable t) {
-
+                callback.quandoFalha("Falha de comunicação: " + t.getMessage());
             }
         });
     }
 
-    private void salvaInterno(Produto produto, DadosCarregadosListener<Produto> listener) {
-        new BaseAsyncTask<>(() -> {
-            long id = dao.salva(produto);
-            return dao.buscaProduto(id);
-        }, listener::quandoCarregados)
+    private void salvaInterno(Produto produtoSalvoNaApi, DadosCarregadosCallback<Produto> callback) {
+        new BaseAsyncTask<Produto>(new BaseAsyncTask.ExecutaListener<Produto>() {
+            @Override
+            public Produto quandoExecuta() {
+                long id = dao.salva(produtoSalvoNaApi);
+                return dao.buscaProduto(id);
+            }
+        }, callback::quandoSucesso)
                 .execute();
     }
 
     public interface DadosCarregadosListener<T>{
         void quandoCarregados(T resultado);
+    }
+
+    public interface DadosCarregadosCallback<T>{
+        void quandoSucesso(T resultado);
+        void quandoFalha(String erro);
     }
 
 }
